@@ -1,6 +1,8 @@
 # Rust thoughts
 
-## 1.Cargo.toml和Cargo.lock
+主要记录一些初学时的想法与总结
+
+# 1.Cargo.toml和Cargo.lock
 
 你首次构建一个项目的时候，Cargo会输出一个Cargo.lock文件，里面记录了每个库使用的精确的版本。之后构建的时候会直接读取该文件并使用里面的版本。
 
@@ -16,14 +18,14 @@ Cargo.lock文件是自动生成的，你不应该手动修改它。假如你的�
 
 假如你的工程是个动态库工程，不会有使用者用到你的源代码，这时也应该提交Cargo.lock文件到代码库。
 
-## 2.引用
+# 2.引用
 
 >   原文标题: References in Rust
 >   原文链接: https://blog.thoughtram.io/references-in-rust/
 
 如果你已经读过我们的文章[Rust’s Ownership](https://link.zhihu.com/?target=https%3A//blog.thoughtram.io/ownership-in-rust/)或者如果你已经写过一些程序并且想知道[what’s the difference between String and &str](https://link.zhihu.com/?target=https%3A//blog.thoughtram.io/string-vs-str-in-rust)，你就应该知道Rust中有个引用的概念。
 
-### 什么是引用？(What are references again?)
+## 2.1 什么是引用
 
 引用是对内存中的另一个值的非拥有(nonowning)指针类型。引用可以使用借用操作符`&`来创建，所以下面的代码创建了一个变量`x`使其拥有值`10`和一个变量`r`使其引用`x`:
 
@@ -94,7 +96,7 @@ stack frame │ • │ 6 │
 
 关于引用还有什么要讲的呢？还有一些。让我们从共享引用(shared references)和可变引用(mutable reference)开始。
 
-### 共享引用和可变引用 (Shared and mutable references)
+## 2.2 共享引用和可变引用
 
 或许你已经知道，Rust中的变量默认是不可变的。引用也是如此。例如我们有一个`struct Person`并且尝试编译下面的代码:
 
@@ -175,7 +177,7 @@ let rrrrr = &rrrrr; // &&&&&p
 
 但是，等等。。。这样符合实际吗？如果我们给一个函数传递一个`r5`，而实际上是一个`&&&&&p`，那个函数将会以什么样的方式接收一个引用的引用的引用的引用的...来工作呢？显然，引用可以被解引用。
 
-### 解引用 (Dereferencing References)
+## 2.3 解引用
 
 引用可以使用`*`操作符来进行解引用从而获取其在内存中指向的值。如果我们使用前面的代码片段，即`x`拥有值`10`并且`r`引用`x`， 就可以用下面的方式解引用从而进行比较:
 
@@ -212,7 +214,7 @@ fn is_ten(val: &i32) -> bool {
 
 Rust的比较操作符(例如`==`和`>=`等)是相当智能的，因此只要操作符两边的类型一样，它们可以跟踪一系列的引用直到它们可以找到一个值。这意味着在实际引用中，你可以按照需要进行很多重引用，对于编译器来讲，这些语法开销(syntactical cost)是一样的，因为编译器会替你辨别的。
 
-### 隐式解引用和借用(Implicit dereferencing and borrowing)
+## 2.4 隐式解引用和借用
 
 此时，你可能想知道，为什么我在具体的类型上调用方法时不需要使用`*`操作符？要想说明这个问题，让我们先来看看之前定义的`Person`结构体:
 
@@ -236,7 +238,7 @@ fn main() {
 }
 ```
 
-你应该注意到了，即使我们使用的是一个引用，但是我们没有使用`*`操作符也能获取引用`r`里的`first_name`字段。这里我们看到的是Rust编译期的另一个可用性特性(usability feature )。即`.`操作符会在需要的时候，进行**隐式的解引用**。
+你应该注意到了，即使我们使用的是一个引用，但是我们没有使用`*`操作符也能获取引用`r`里的`first_name`字段。这里我们看到的是Rust编译期的另一个可用性特性(usability feature )。**即`.`操作符会在需要的时候**，进行**隐式的解引用**。
 
 如果没有这个特性的话，可能需要像下面这样写：
 
@@ -260,6 +262,87 @@ fn main() {
 ```
 
 多么酷!
+
+## 2.5 可变引用与不可变引用
+
+如何在一个作用域里使用同一个可变变量的不可变引用与可变引用
+
+```Rust
+fn mut_and_not_mut(){
+    let mut s = String::from("Hello Wrold!");
+    let s1 = &s;
+    let s2 = &s;
+    println!("s1:{}\ts2:{}\n",s1,s2);//只要确保下面声明完可变引用后不会再调用上面的不可变引用即可。不过较少发生这种声明完一个变量又不用的情况。
+    let s3 = &mut s;
+    println!("s3:{}\n",s3);   
+}
+```
+
+上面代码可以正常执行
+
+```Rust
+fn mut_and_not_mut(){
+    let mut s = String::from("Hello Wrold!");
+    let s1 = &s;
+    let s2 = &s;
+    println!("s1:{}\ts2:{}\n",s1,s2);
+    let s3 = &mut s;		//报错
+    println!("s3:{}\n",s3);   
+    println!("s1:{}\ts2:{}\n",s1,s2);
+}
+```
+
+​		结论: 而当你在声明完该变量的可变引用后再一次调用上面声明的不可变引用时编译器就会报错，理由是已经将该变量声明为不可变引用，因此不能同时将它声明为不可变引用。
+​		所以，要想在同一个作用域声明不可变引用与可变引用，要保证在声明完可变引用后不会再调用上面声明的不可变引用，否则就会冲突为同时将一个变量声明为可变引用与不可变引用。
+
+​		如果一个可变变量被声明为一个不可变引用，那么也不可以对其进行可变操作（改值）
+
+```rust
+fn mut_and_not_mut(){
+    let mut s = String::from("Hello Wrold!");
+    let s1 = &s;
+    let s2 = &s;
+    println!("s1:{}\ts2:{}\n",s1,s2);
+    s1.push_str("Rust!");		//报错 error[E0596]: cannot borrow `*s1` as mutable, as it is behind a `&` reference
+    //编译器提示将上面声明s1的语句改为,let s1 = &mut s; -- help: consider changing this to be a mutable reference: `&mut s`
+}
+```
+
+```rust
+fn mut_and_not_mut(){
+    let mut s = String::from("Hello Wrold!");
+    let s1 = &s;
+    let s2 = &s;
+    println!("s1:{}\ts2:{}\n",s1,s2);
+    let s3 = &mut s;
+    println!("s3:{}\n",s3);   
+    s3.push_str("\tRust!");//可以对s3执行.push_str()操作
+    //注意这里能调用s3.push_str()并不是说对不可变变量s3进行操作，只是对它指向的s进行push_str()操作。
+    println!("s3:{}\n",s3);
+}
+```
+
+​		验证是否可以对不可变变量进行操作
+
+```rust
+fn mut_and_not_mut(){
+    let mut s = String::from("Hello Wrold!");
+    let mut r = String::from("Python");
+    let s1 = &s;
+    let s2 = &s;
+
+    println!("s1:{}\ts2:{}\n",s1,s2);
+    let  s3 = &mut s;
+    println!("s3:{}\n",s3);    
+    s3.push_str("\tRust!");
+    println!("s3:{}\n",s3);
+    s3 = &mut r;//这个是直接对s3进行变化，编译器报错，cannot assign twice to immutable variable,如果要进行这一步操作，需要在声明s3时改成
+    //let mut s3 = &mut s;才可以进行s3进行变化操作，即可以指向s，也可以指向r
+    
+}
+```
+
+​		可以将 s3.push_str()看成是*s3.push_str()的语法糖，是编译器自动为我们省去了 *s3 解引用这一步操作（自动解引用）。
 
 # 3.Rust模块系统
 
@@ -286,33 +369,166 @@ fn main() {
 
 # 4.Use关键字的习惯用法
 
-![image-20220225163052186](Rust_thoughts.assets/image-20220225163052186.png)
+![image-20220225163052186](https://abc.p0lar1s.com/202202251832993.png)
 
-![image-20220225162853596](Rust_thoughts.assets/image-20220225162853596.png)
+![image-20220225162853596](https://abc.p0lar1s.com/202202251832365.png)
 
-![image-20220225162930697](Rust_thoughts.assets/image-20220225162930697.png)
+![image-20220225162930697](https://abc.p0lar1s.com/202202251832774.png)
 
-![image-20220225163104926](Rust_thoughts.assets/image-20220225163104926.png)
+![image-20220225163104926](https://abc.p0lar1s.com/202202251832159.png)
 
 用as起个别名
 
-![image-20220225163201649](Rust_thoughts.assets/image-20220225163201649.png)
+![image-20220225163201649](https://abc.p0lar1s.com/202202251832609.png)
 
-![image-20220225164616519](Rust_thoughts.assets/image-20220225164616519.png)
-
-
-
-![image-20220225164633429](Rust_thoughts.assets/image-20220225164633429.png)
-
-![image-20220225164741913](Rust_thoughts.assets/image-20220225164741913.png)
-
-![image-20220225164810211](Rust_thoughts.assets/image-20220225164810211.png)
-
-![image-20220225165022960](Rust_thoughts.assets/image-20220225165022960.png)
-
-![image-20220225164901522](Rust_thoughts.assets/image-20220225164901522.png)
-
-![image-20220225164957360](Rust_thoughts.assets/image-20220225164957360.png)
+![image-20220225164616519](https://abc.p0lar1s.com/202202251832712.png)
 
 
 
+![image-20220225164633429](https://abc.p0lar1s.com/202202251832537.png)
+
+![image-20220225164741913](https://abc.p0lar1s.com/202202251832795.png)
+
+![image-20220225164810211](https://abc.p0lar1s.com/202202251833323.png)
+
+![image-20220225165022960](https://abc.p0lar1s.com/202202251833023.png)
+
+![image-20220225164901522](https://abc.p0lar1s.com/202202251833927.png)
+
+![image-20220225164957360](https://abc.p0lar1s.com/202202251833071.png)
+
+
+
+
+
+# 5.借用和引用
+
+先来看看Rust入门上说的借用与引用：
+**我们将获取引用作为函数参数称为 借用（borrowing）**
+正如现实生活中，如果一个人拥有某样东西，你可以从他那里借来。当你使用完毕，必须还回去。
+
+## 例子
+
+```rust
+fn main() {
+	let s1 = String::from("hello");
+	let len = calculate_length(&s1);
+	println!("The length of '{}' is {}.", s1, len);
+}
+fn calculate_length(s: &String) -> usize {
+	s.len()
+}
+```
+
+![img](https://abc.p0lar1s.com/202203041419888.png)
+
+这里首先创建了一个名字为s1的String，注意不是str，String是可变字符串，由栈里的s1保存指向堆空间的地址，长度以及容量。如上图。
+
+然后调用函数calculate_length，里面传入了一个s1的引用。这里s里存的是s1的引用，也就是说s是一个与s1不同的全新的变量，只是里面存的指针值指向了s1，同时没有长度和容量。这里可以理解为java的引用。
+
+这样做法有一个好处，函数并没有直接获得s1的所有权，当函数结束，即引用离开其作用域s被释放但是s1任然存在并不会被丢弃。所以函数结束后你任然可以继续使用s1。
+
+注意：rust里默认拷贝全是浅拷贝，只会拷贝栈上的引用值，并不会拷贝堆空间的值。
+
+深拷贝可以如下使用：
+
+```rust
+let s1 = String::from("hello");
+let s2 = s1.clone();
+```
+
+## 最后总结
+
+rust借用可以理解为动作，行为，类比a从b那里借东西。
+rust引用类似于java的引用，字面上的：&s1。所以我们称
+**我们将获取的引用作为函数的参数称为 借用（borrowing）**
+
+# 6.生命周期省略的三原则
+
+**任何引用都有一个生命周期，并且需要为使用引用的函数或结构体指定生命周期参数。**
+
+**函数参数或方法参数中的生命周期被称为输入生命周期(input lifetime), 而返回的生命周期则被称为输出生命周期(output lifetime)。**
+
+在没有显式标注的情况下，编译器目前使用了3种规则来计算引用的生命周期。**第一条规则作用于输入生命周期，第二条和第三条规则作用于输出生命周期。**当编译器检查完这3条规则后仍有无法计算出生命周期的引用时，编译器就会停止运行并抛出错误。**这些规则不但对fn定义生效，也对impl代码块生效。**
+
+**第一条规则是，每一个引用参数都会拥有自己的生命周期参数。**
+**第二条规则是，当只存在一个输入生命周期参数时，这个生命周期会被赋予给所有输出生命周期参数。**
+**第三条规则是，当拥有多个输入生命周期参数，而其中一个是&self或&mut self时，self的生命周期会被赋予给所有的输出生命周期参数。**
+
+# 7.move、copy、clone和drop
+
+## move语义
+
+rust中的类型，如果没有实现Copy trait，那么在此类型的变量赋值、函数入参、函数返回值都是move语义。这是与c++的最大区别，从c++11开始，右值引用的出现，才有了move语义。但rust天生就是move语义。
+
+如下的代码中，变量a绑定的String实例，被move给了b变量，此后a变量就是不可访问了（编译器会帮助我们检查）。然后b变量绑定的String实例又被move到了f1函数中，，b变量就不可访问了。f1函数对传入的参数做了一定的运算后，再将运算结果返回，这是函数f1的返回值被move到了c变量。在代码结尾时，只有c变量是有效的。
+
+```rust
+fn f1(s: String) -> String {s + " world!"}
+let a = String::from("Hello");
+let b = a;
+let c = f1(b);
+```
+
+注意，如上的代码中，`String`类型没有实现`Copy` trait，所以在变量传递的过程中，都是move语义。
+
+## copy语义
+
+rust中的类型，如果实现了Copy trait，那么在此类型的变量赋值、函数入参、函数返回值都是copy语义。这也是c++中默认的变量传递语义。
+
+看看类似的代码，变量a绑定的i32实例，被copy给了b变量，此后a、b变量同时有效，并且是两个不同的实例。然后a变量绑定的i32实例又被copy到了f1函数中，a变量仍然有效。传入f1函数的参数i是一个新的实例，做了一定的运算后，再将运算结果返回。这时函数f1的返回值被copy到了c变量，同时f1函数中的运算结果作为临时变量也被销毁（不会调用drop，如果类型实现了Copy trait，就不能有Drop trait）。传入b变量调用f1的过程是相同的，只是返回值被copy给了d变量。在代码结尾时，a、b、c、d变量都是有效的。
+
+```rust
+fn f2(i: i32) -> i32 {i + 10}
+let a = 1_i32;
+let b = a;
+let c = f1(a);
+let d = f1(b);
+```
+
+这里再强调下，`i32`类型实现了`Copy` trait，所以整个变量传递过程，都是copy语义。
+
+## clone语义
+
+move和copy语义都是隐式的，clone需要显式的调用。
+
+参考类似的代码，变量a绑定的String实例，在赋值前先clone了一个新的实例，然后将新实例move给了b变量，此后a、b变量同时有效。然后b变量在传入f1函数前，又clone一个新实例，再将这个新实例move到f1函数中。f1函数对传入的参数做了一定的运算后，再将运算结果返回，这里函数f1的返回值被move到了c变量。在代码结尾时，a、b、c变量都是有效的。
+
+```rust
+fn f1(s: String) -> String {s + " world!"}
+let a = String::from("Hello");
+let b = a.clone();
+let c = f1(b.clone());
+```
+
+在这个过程中，在隐式move前，变量clone出新实例并将新实例move出去，变量本身保持不变。
+
+## drop语义
+
+rust的类型可以实现Drop trait，也可以不实现Drop trait。但是对于实现了Copy trait的类型，不能实现Drop trait。也就是说Copy和Drop两个trait对同一个类型只能有一个，鱼与熊掌不可兼得。
+
+变量在离开作用范围时，编译器会自动销毁变量，如果变量类型有Drop trait，就先调用Drop::drop方法，做资源清理，一般会回收heap内存等资源，然后再收回变量所占用的stack内存。如果变量没有Drop trait，那就只收回stack内存。
+
+正是由于在Drop::drop方法会做资源清理，所以**Copy和Drop trait只能二选一**。因为如果类型实现了Copy trait，在copy语义中并不会调用Clone::clone方法，不会做deep copy，那就会出现两个变量同时拥有一个资源（比如说是heap内存等），在这两个变量离开作用范围时，会分别调用Drop::drop方法释放资源，这就会出现double free错误。
+
+## copy与clone语义区别
+
+先看看两者的定义：
+
+```rust
+pub trait Clone: Sized {
+    fn clone(&self) -> Self;
+    fn clone_from(&mut self, source: &Self) {
+        *self = source.clone()    
+	}
+}
+pub trait Copy: Clone {
+    // Empty.
+}
+```
+
+Clone是Copy的super trait，一个类型要实现Copy就必须先实现Clone。
+
+再留意看，Copy trait中没有任何方法，所以在copy语义中不可以调用用户自定义的资源复制代码，也就是**不可以做deep copy**。**copy语义就是变量在stack内存的按位复制，没有其他任何多余的操作。**
+
+Clone中有clone方法，用户可以对类型做自定义的资源复制，这就**可以做deep copy**。在clone语义中，类型的Clone::clone方法会被调用，程序员在Clone::clone方法中做资源复制，同时在Clone::clone方法返回时，变量的stack内存也会被按照位复制一份，生成一个完整的新实例。
