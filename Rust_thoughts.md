@@ -532,3 +532,279 @@ Clone是Copy的super trait，一个类型要实现Copy就必须先实现Clone。
 再留意看，Copy trait中没有任何方法，所以在copy语义中不可以调用用户自定义的资源复制代码，也就是**不可以做deep copy**。**copy语义就是变量在stack内存的按位复制，没有其他任何多余的操作。**
 
 Clone中有clone方法，用户可以对类型做自定义的资源复制，这就**可以做deep copy**。在clone语义中，类型的Clone::clone方法会被调用，程序员在Clone::clone方法中做资源复制，同时在Clone::clone方法返回时，变量的stack内存也会被按照位复制一份，生成一个完整的新实例。
+
+# 8.Rust 迭代器
+
+## 1、迭代器是什么？
+
+**迭代器**（*iterator*）负责遍历序列中的每一项和决定序列何时结束的逻辑，迭代器是 **惰性的**（*lazy*）。迭代器模式允许你对一个项的序列进行某些处理。
+
+```rust
+ let v = vec![1, 2, 3];
+ let v_iter = v.iter(); //实际上只是创建了一个迭代器，没有做其他更深层次的动作
+```
+
+迭代器使用样例：计算1到10的和
+
+```rust
+ fn main() {
+     println!("{:?}", (1..10).sum::<i32>());
+ }
+```
+
+## 2、Iterator trait 和 IntoIterator trait
+
+**迭代器**都实现了定义于标准库的`Iterator trait`（`std::iter::Iterator`)，该trait要求实现其的类型要`impl`关联类型 `Item`与方法`next`，具体可参见定义
+
+```rust
+ pub trait Iterator {
+     /// The type of the elements being iterated over.
+     #[stable(feature = "rust1", since = "1.0.0")]
+     type Item;
+ 
+     #[stable(feature = "rust1", since = "1.0.0")]
+     fn next(&mut self) -> Option<Self::Item>;
+     
+     ///一些其他默认实现
+ }
+```
+
+`Iterator`提供了丰富的`API`及其默认实现，并且其中的默认实现大部分都依赖于`next()`，而`next` 是 `Iterator` 实现者被要求定义的唯一方法。`next` 一次返回迭代器中的一个项，封装在 `Some` 中，当迭代器结束时，它返回 `None`。
+
+标准库中的`IntoIterator trait`定义如下
+
+```rust
+ #[rustc_diagnostic_item = "IntoIterator"]
+ #[stable(feature = "rust1", since = "1.0.0")]
+ pub trait IntoIterator {
+     #[stable(feature = "rust1", since = "1.0.0")]
+     type Item;
+ 
+     #[stable(feature = "rust1", since = "1.0.0")]
+     type IntoIter: Iterator<Item = Self::Item>;
+ 
+     #[stable(feature = "rust1", since = "1.0.0")]
+     fn into_iter(self) -> Self::IntoIter;
+ }
+ 
+ #[stable(feature = "rust1", since = "1.0.0")]
+ impl<I: Iterator> IntoIterator for I {
+     type Item = I::Item;
+     type IntoIter = I;
+ 
+     fn into_iter(self) -> I {
+         self
+     }
+ }
+```
+
+意味着那些实现`Iterator trait`的类型，将自动实现`IntoIterator trait`，于是可以调用`into_iter()`方法，而这也是`for`循环某些类型的工作基础，如下例子
+
+```rust
+ fn main() {
+     let v = vec![1, 2, 3];
+     for i in v {
+         println!("{:?}", i);
+     }
+ }
+```
+
+reference说明：A `for` expression is a syntactic construct for looping over elements provided by an implementation of `std::iter::IntoIterator`。
+
+`Iterator`有丰富的API及其默认实现，具体可以参考标准库文档
+
+## 3、迭代器的使用
+
+如果我们注意，就会发现`Iterator trait`的`next`方法的入参为`&mut self`，意味着任何调用了`next`方法的方法都会消耗适配器，这类方法被称为**消费适配器**（`consuming adaptors`），比如前文出现的`sum`方法就是一个**消费**适配器，该方法获取迭代器的所有权并反复调用`next`来遍历迭代器，因而会消费迭代器。
+
+```rust
+ fn main() {
+     let v = vec![1, 2, 3];
+     let mut iter = v.iter();
+     println!("{:?}", iter.sum::<i32>());
+ }
+```
+
+再来看一个`&str`相关的例子，`chars`返回的类型是`Chars`，其实现了`Iterator trait`
+
+```rust
+ fn main() {
+     let s = "学习迭代器";
+     let mut chars = s.chars();
+     loop {
+         let c = chars.next();
+         if c.is_some() {
+             println!("{:?}", c.unwrap());
+         } else {
+             break;
+         }
+     }
+ }
+```
+
+可以找到其实现
+
+```rust
+ impl<'a> Iterator for Chars<'a> {
+     type Item = char;
+ 
+     #[inline]
+     fn next(&mut self) -> Option<char> {
+         next_code_point(&mut self.iter).map(|ch| {
+             // SAFETY: `str` invariant says `ch` is a valid Unicode Scalar Value.
+             unsafe { char::from_u32_unchecked(ch) }
+         })
+     }
+ 
+     #[inline]
+     fn count(self) -> usize {
+         // length in `char` is equal to the number of non-continuation bytes
+         let bytes_len = self.iter.len();
+         let mut cont_bytes = 0;
+         for &byte in self.iter {
+             cont_bytes += utf8_is_cont_byte(byte) as usize;
+         }
+         bytes_len - cont_bytes
+     }
+ 
+     #[inline]
+     fn size_hint(&self) -> (usize, Option<usize>) {
+         let len = self.iter.len();
+         // `(len + 3)` can't overflow, because we know that the `slice::Iter`
+         // belongs to a slice in memory which has a maximum length of
+         // `isize::MAX` (that's well below `usize::MAX`).
+         ((len + 3) / 4, Some(len))
+     }
+ 
+     #[inline]
+     fn last(mut self) -> Option<char> {
+         // No need to go through the entire string.
+         self.next_back()
+     }
+ }
+```
+
+`Iterator` trait中定义了另一类方法，被称为**迭代器适配器**（`iterator adaptors`），意味着我们可以将当前的迭代器变为不同类型的迭代器（大部分都是标准库实现的迭代器），又因为`迭代器`是惰性的，必须调用一个消费适配器方法以便获取迭代器适配器调用的结果。
+
+有了**迭代器适配器**之后，我们就可以进行链式调用了（迷之迭代器套娃）
+
+```rust
+ fn main() {
+     let v = vec![1, 2, 3, 4, 5, 6];
+     //s的类型是  Filter<Map<Iter<i32>, ...>, ...>
+     let s = v.iter().map(|x| {x + 1}).filter(|x| x % 5 != 0);
+     println!("{:?}", s.collect::<Vec<i32>>());  //将打印  2 3 4 6 7
+ }
+```
+
+观摩一下`fn map`的实现，可以看到Map以当前迭代器作为参数，创造了一个新的`Map`迭代器，
+
+```rust
+ pub trait Iterator {    
+     ///some code
+     
+     fn map<B, F>(self, f: F) -> Map<Self, F>
+     where
+         Self: Sized,
+         F: FnMut(Self::Item) -> B,
+     {
+         Map::new(self, f)
+     }
+     
+     ///some code
+ }
+ 
+ ///Map迭代器适配器的实现
+ #[must_use = "iterators are lazy and do nothing unless consumed"]
+ #[stable(feature = "rust1", since = "1.0.0")]
+ #[derive(Clone)]
+ pub struct Map<I, F> {
+     iter: I,
+     f: F,
+ }
+ impl<I, F> Map<I, F> {
+     pub(super) fn new(iter: I, f: F) -> Map<I, F> {
+         Map { iter, f }
+     }
+ }
+```
+
+## 4、迭代器适配器与闭包
+
+在**迭代器适配器**中，很多都接受闭包作为其参数参与逻辑实现，即部分**迭代器适配器**拥有捕获环境变量的能力，以`fiter`为例，假如有一份学生名单，需要获取年龄大于指定值的学生
+
+```rust
+ #[derive(Debug)]
+ struct Student<'a>{
+     name: &'a str,
+     age: i32,
+ }
+ 
+ fn main() {
+     let students = vec![
+         Student {name: "a", age: 15},
+         Student {name: "b", age: 16},
+         Student {name: "c", age: 17},
+         Student {name: "d", age: 18},
+         Student {name: "e", age: 19},
+     ];
+ 
+     let min_age = 18;
+     let result = students.into_iter().filter(|student| student.age >= min_age).collect::<Vec<Student>>();
+     println!("{:?}", result);
+     //output -> [Student { name: "d", age: 18 }, Student { name: "e", age: 19 }]
+ }
+```
+
+## 5、自定义迭代器
+
+通过前面的知识，我们知道，只要给一个类型实现了`Iterator trait`（当然，必须实现`next`方法），就可以在该类型上创建迭代器了，下面例子展示创建了一个斐波那契数列类型上创建迭代器（请注意：这是一个没有终点的迭代器，直到`i32`溢出，如果需要，有可以在`next`方法中去限定终止值）
+
+```rust
+ struct Fibonacci {
+     x: i32,
+     y: i32,
+ }
+ 
+ impl Fibonacci {
+     fn new() -> Fibonacci {
+         Fibonacci {
+             x: 0,
+             y: 0,
+         }
+     }
+ }
+ 
+ impl Iterator for Fibonacci {
+     type Item = i32;
+ 
+     fn next(&mut self) -> Option<Self::Item> {
+         if self.x == 0 {
+             self.x = 1;
+             Some(self.x)
+         } else if self.y == 0 {
+             self.y = 1;
+             Some(self.y)
+         } else {
+             let s = self.x + self.y;
+             self.x = self.y;
+             self.y = s;
+             Some(s)
+         }
+     }
+ }
+ 
+ 
+ fn main() {
+     let mut f = Fibonacci::new();
+     println!("{:?}", f.next());
+     println!("{:?}", f.next());
+     println!("{:?}", f.next());
+     println!("{:?}", f.next());
+     println!("{:?}", f.next());
+ }
+```
+
+## 6、迭代器 VS 循环
+
+迭代器是`Rust`的**零抽象**之一，这意味着迭代器抽象不会引入运行时开销，不会有任何性能上的影响
