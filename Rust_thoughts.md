@@ -37,7 +37,7 @@ let r = &x;
 因为10是一个原始类型(primitive type)，所以它和引用都存储在栈上。这里是它们在内存中大概的样子（如果你不理解堆和栈这两个术语，你可能需要看一下关于Rust所有权的[那篇文章](https://link.zhihu.com/?target=https%3A//blog.thoughtram.io/ownership-in-rust)）。
 
 ```text
-				   +–––––––+
+				   +–––––-–+
                    │       │
             +–––+––V–+–––+–│–+–––+
 stack frame │   │ 10 │   │ • │   │ 
@@ -57,7 +57,7 @@ let last_name = &my_name[7..];
 `String`是一个指向存储在堆上的数据的指针类型。**字符串切片(string slice)是数据上子串的引用**，因此它也是指向堆上的内存。
 
 ```text
-				my_name       last_name
+			   my_name       last_name
             [––––––––––––]    [–––––––]
             +–––+––––+––––+–––+–––+–––+
 stack frame │ • │ 16 │ 13 │   │ • │ 6 │ 
@@ -81,7 +81,7 @@ let name = "Pascal";
 上面的代码看起来像下面这样:
 
 ```text
-			name: &str
+		   name: &str
             [–––––––]
             +–––+–––+
 stack frame │ • │ 6 │ 
@@ -479,7 +479,7 @@ rust中的类型，如果实现了Copy trait，那么在此类型的变量赋值
 看看类似的代码，变量a绑定的i32实例，被copy给了b变量，此后a、b变量同时有效，并且是两个不同的实例。然后a变量绑定的i32实例又被copy到了f1函数中，a变量仍然有效。传入f1函数的参数i是一个新的实例，做了一定的运算后，再将运算结果返回。这时函数f1的返回值被copy到了c变量，同时f1函数中的运算结果作为临时变量也被销毁（不会调用drop，如果类型实现了Copy trait，就不能有Drop trait）。传入b变量调用f1的过程是相同的，只是返回值被copy给了d变量。在代码结尾时，a、b、c、d变量都是有效的。
 
 ```rust
-fn f2(i: i32) -> i32 {i + 10}
+fn f1(i: i32) -> i32 {i + 10}
 let a = 1_i32;
 let b = a;
 let c = f1(a);
@@ -529,7 +529,7 @@ pub trait Copy: Clone {
 
 Clone是Copy的super trait，一个类型要实现Copy就必须先实现Clone。
 
-再留意看，Copy trait中没有任何方法，所以在copy语义中不可以调用用户自定义的资源复制代码，也就是**不可以做deep copy**。**copy语义就是变量在stack内存的按位复制，没有其他任何多余的操作。**
+再留意看，Copy trait中没有任何方法，所以在copy语义中不可以调用用户自定义的资源复制代码，也就是**不可以做deep copy**。**Copy语义就是变量在stack内存的按位复制，没有其他任何多余的操作。**
 
 Clone中有clone方法，用户可以对类型做自定义的资源复制，这就**可以做deep copy**。在clone语义中，类型的Clone::clone方法会被调用，程序员在Clone::clone方法中做资源复制，同时在Clone::clone方法返回时，变量的stack内存也会被按照位复制一份，生成一个完整的新实例。
 
@@ -808,3 +808,312 @@ reference说明：A `for` expression is a syntactic construct for looping over e
 ## 6、迭代器 VS 循环
 
 迭代器是`Rust`的**零抽象**之一，这意味着迭代器抽象不会引入运行时开销，不会有任何性能上的影响
+
+# 9.Box<T>,Rc<T>,RefCell<T>
+
+![image-20220310160237716](https://abc.p0lar1s.com/202203101602839.png)
+
+## 1、作用：
+
+Box<T>：通过Box<T>指针可以在堆上分配数据。
+
+Rc<T>： 通过Rc<T>指针可以共享数据。Rust语言因为有所有权的概念，所以，数据失去了所有权之后，后面就无法使用该数据，而Rc<T>就是解决此类问题的。而Rc<T>指针指向的值是只读性质的，不能够修改。
+
+RefCell<T>：通过RefCell<T>指针可以改变**不可变**的值。Rust一般变量定义为immutable的时候，是不能修改其值的，但是，RefCell<T>指针能做到。
+
+## 2、区别：
+
+1.   Rc<T> 同样的数据有多个拥有者，Box<T> 和 RefCell<T> 同样的数据只有唯一的拥有者；
+
+2.   Box<T>数据的可变或者不可变的借用的检查发生在编译阶段，Rc<T>不可变的借用的检查发生在编译阶段，RefCell<T>不可变或者可变的借用发生在运行阶段
+
+3.   由于RefCell<T>可变借用的检查发生在运行阶段,，即使RefCell<T>定义的是不可变的，你也可以改变RefCell<T>里面定义的值。
+
+## 3、关于弱引用Weak(T)：
+
+1.   弱引用是通过Rc::downgrade传递实例的引用，调用Rc::downgrade会得到Weak(T)类型的智能指针，同时将weak_count加1。
+2.   区别在于weak_count无需为0就能使Rc实例被清理，只要strong_count为0就可以了。
+3.   可以通过Rc::upgrade方法返回Option<Rc<T>>对象。
+
+## 4、使用弱引用解决循环引用问题
+
+https://zhuanlan.zhihu.com/p/383690146
+
+### 制造循环引用
+
+这里仍然使用前面的例子来试图制造两个相互引用的链表：
+
+```rust
+use std::rc::Rc;
+use std::cell::RefCell;
+
+#[derive(Debug)]
+enum List {
+  Cons(i32, RefCell<Rc<List>>),
+  Nil
+}
+
+impl List {
+  // tail方法用来方便地访问Cons成员的第二项
+  fn tail(&self) -> Option<&RefCell<Rc<List>>> {
+    match self {
+      List::Cons(_, item) => Some(item),
+      List::Nil => None
+    }
+  }
+}
+
+// 这里在变量a中创建了一个Rc<List>实例来存放初值为5和Nil的List值
+let a = Rc::new(List::Cons(5,
+  RefCell::new(
+    Rc::new(List::Nil)
+  )
+));
+
+println!("a 初始化后的引用数量 = {}", Rc::strong_count(&a));
+// a 初始化后的引用数量 = 1
+
+println!("a 的第二项是 = {:?}", a.tail());
+// a 的第二项是 = Some(RefCell { value: Nil })
+```
+
+下面在变量b中创建了一个Rc<List>实例来存放初值为10和指向列表a的Rc<List>：
+
+```rust
+let b = Rc::new(List::Cons(10,
+  RefCell::new(
+    Rc::clone(&a)
+  )
+));
+
+println!("a 在 b 创建后的引用数量 = {}", Rc::strong_count(&a));
+// a 在 b 创建后的引用数量 = 2
+
+println!("b 初始化后的引用数量 = {}", Rc::strong_count(&b));
+// b 初始化后的引用数量 = 1
+
+println!("b 的第二项是 = {:?}", b.tail());
+// b 的第二项是 = Some(RefCell { value: Cons(5, RefCell { value: Nil }) })
+```
+
+最后，把a的第二项指向b，造成循环引用：
+
+```rust
+if let Some(second) = a.tail() {
+  *second.borrow_mut() = Rc::clone(&b);
+}
+
+println!("改变a之后，b的引用数量 = {}", Rc::strong_count(&b));
+// 改变a之后，b的引用数量 = 2
+
+println!("改变a之后，a的引用数量 = {}", Rc::strong_count(&a));
+// 改变a之后，a的引用数量 = 2
+
+println!("a next item = {:?}", a);
+// 报错，由于a和b相互引用，所以在打印过程中会无限打印，最终堆栈溢出
+```
+
+可以看到将 a 修改为指向 b 之后，a 和 b 中都有的 Rc<List> 实例的引用计数为 2。 在 main 的结尾，rust 会尝试首先丢弃 b，这会使 a 和 b 中 Rc<List> 实例的引用计数减 1。 然而，因为 a 仍然引用 b 中的 Rc<List>，Rc<List> 的引用计数是 1 而不是 0，由于其内存的引用计数为 1，所以 Rc<List> 在堆上的内存不会被丢弃，将会永久保留。
+
+![img](https://abc.p0lar1s.com/202203102026567.jpeg)
+
+
+
+### 避免引用循环：将 Rc<T> 变为 Weak<T>
+
+我们可以使用弱引用类型Weak<T>来防止循环引用：
+
+```rust
+// 引入Weak
+use std::rc::{ Rc, Weak };
+use std::cell::RefCell;
+
+// 创建树形数据结构：带有子节点的 Node
+#[derive(Debug)]
+struct Node {
+  value: i32,
+  parent: RefCell<Weak<Node>>, // 对父节点的引用是弱引用
+  children: RefCell<Vec<Rc<Node>>> // 对子节点的引用是强引用
+}
+
+// 创建叶子结点
+let leaf = Rc::new(Node {
+  value: 3,
+  children: RefCell::new(vec![]),
+  parent: RefCell::new(Weak::new())
+});
+
+// 创建枝干节点
+let branch = Rc::new(Node {
+  value: 5,
+  // 将leaf作为branch的子节点
+  children: RefCell::new(vec![Rc::clone(&leaf)]),
+  parent: RefCell::new(Weak::new())
+});
+```
+
+使用弱引用连接枝干和叶子节点：
+
+```rust
+// 与 Rc::clone 方法类似，
+// 使用 Rc::downgrade 方法将leaf节点的父节点使用弱引用指向branch
+*(leaf.parent.borrow_mut()) = Rc::downgrade(&branch);
+
+// 使用upgrade方法查看父节点是否存在，返回Option类型，
+// 可以成功打印，说明使用弱引用并没有造成循环引用
+println!("leaf的parent节点 = {:?}", leaf.parent.borrow().upgrade());
+// leaf的parent节点 = Some(Node {
+//   value: 5,
+//   parent: RefCell { value: (Weak) },
+//   children: RefCell {
+//     value: [
+//       Node {
+//         value: 3,
+//         parent: RefCell { val (Weak) },
+//         children: RefCell { value: [] }
+//       }
+//     ]
+//   }
+// })
+```
+
+使用 Rc::downgrade 时会得到 Weak<T> 类型的智能指针，每次调用Rc::downgrade 会将 weak_count 加1，用于记录有多少个弱引用，而实例被清理时，关注的是strong_count，只要变成0就会清理，而不关心弱引用 weak_count 的数量。
+
+### 观察 strong_count 和 weak_count 的改变
+
+下面我们使用Rc::strong_count() 和 Rc::weak_count() 方法来观察一下强引用和弱引用的区别，注意他们在作用域销毁时的表现：
+
+```rust
+#[derive(Debug)]
+struct Node {
+  value: i32,
+  parent: RefCell<Weak<Node>>,
+  children: RefCell<Vec<Rc<Node>>>,
+}
+
+let leaf = Rc::new(Node {
+  value: 3,
+  parent: RefCell::new(Weak::new()),
+  children: RefCell::new(vec![]),
+});
+
+println!("子节点 强引用 = {}, 弱引用 = {}", Rc::strong_count(&leaf), Rc::weak_count(&leaf));
+// 子节点 强引用 = 1, 弱引用 = 0
+
+// 新作用域
+{
+  let branch = Rc::new(Node {
+    value: 5,
+    parent: RefCell::new(Weak::new()),
+    // leaf放入branch子节点
+    children: RefCell::new(vec![Rc::clone(&leaf)]),
+  });
+
+  // leaf父节点弱引用branch节点
+  *leaf.parent.borrow_mut() = Rc::downgrade(&branch);
+
+  println!("branch 强引用 = {}, 弱引用 = {}", Rc::strong_count(&branch), Rc::weak_count(&branch));
+  // branch 强引用 = 1, 弱引用 = 1
+
+  println!("leaf 强引用 = {}, 弱引用 = {}", Rc::strong_count(&leaf), Rc::weak_count(&leaf));
+  // leaf 强引用 = 2, 弱引用 = 0
+}
+
+println!("leaf 的父节点 = {:?}", leaf.parent.borrow().upgrade());
+// leaf 的父节点 = None，上面作用域销毁时，branch强引用从1
+// 变成0，注意并不关注弱引用，即使弱引用为1，branch仍将被销毁
+
+println!("leaf 强引用 = {}, 弱引用 = {}", Rc::strong_count(&leaf), Rc::weak_count(&leaf));
+// leaf 强引用 = 1, 弱引用 = 0，同样由于上面作用域的销毁，branch对于leaf不再强引用。
+```
+
+所以当我们的数据类型有循环引用关系的时候便可以使用Weak<T>类型，使相互引用的数据在指向彼此的同时避免产生循环引用和内存泄漏。
+
+# 10.共享所有权
+
+对任意类型T，Rc是一个指向堆空间T类型并且附上引用计数(计数值也在堆空间上)的指针。克隆Rc类型并不会克隆堆空间上T类型的数据，它只是简单的创建另外一个指针指向它。并把引用计数器加1。当最后一个存在的Rc被释放的时候，堆空间上T类型的数据才释放。一个Rc类型的值可以直接调用T类型的方法。Rc类型的值是不可变的。rust的内存和线程安全保证依赖于变量的使用限制，不能同时是共享的和可变的。Rc变量是共享所有权的，所以不能是可变的。引用计数类型内存管理的一个已知问题是变量相互引用造成都得不到释放引起内存泄露。在rust中造成引用循环需要一个旧值指向一个新值，而旧值需要可变，但是rust的Rc类型为不可变，所以正常情况下不会存在引用循环。然而rust的确存在创建引用循环的方法，如果结合interior mutability和Rc类型，可以创建引用循环导致内存泄露。你可以用std::rc::Weak创建弱引用Rc类型来防止引用循环。
+
+# 11.其他
+
+## 零开销抽象
+
+使用抽象时不会引入额外的运行时开销
+
+例如，使用迭代器，其速度可能可能会比使用for循环更快
+
+## Cargo profile
+
+Cargo内置了dev和release两种profile（配置文件），也可以通过在Cargo.toml中自定义各种配置选项以覆盖默认配置，例如：
+
+![image-20220306141129410](https://abc.p0lar1s.com/202203061415325.png)
+
+opt-level：代码优化程度，一般来说优化程度越高，所需的编译时间越长
+
+## Cargo Workspace
+
+![image-20220306144650962](https://abc.p0lar1s.com/202203061446017.png)
+
+下面是例子：
+
+![image-20220306144726613](https://abc.p0lar1s.com/202203061447659.png)
+
+先创建空文件夹add和Cargo.toml文件，编辑Cargo.toml
+
+![image-20220306144913003](https://abc.p0lar1s.com/202203061449257.png)
+
+在该文件夹下
+
+```
+cargo new adder
+```
+
+之后在add目录下
+
+```
+cargo build
+```
+
+发现出现了target文件夹，生成了Carogo.lock文件，target文件夹用于存放所有成员到的编译产出物，这样做的原因是：工作空间中的各个crate或者项目往往是相互依赖的，如果每个crate都有自己的target目录，那么就不得不反复编译工作空间中各个crate
+
+在add目录下创建一个库crate
+
+```
+cargo new add-one --lib
+```
+
+![image-20220306145705930](https://abc.p0lar1s.com/202203061457989.png)
+
+为了使adder依赖于add-one crate，需要在adder目录下的Cargo.toml文件中显示指明：
+
+![image-20220306145924526](https://abc.p0lar1s.com/202203061459595.png)
+
+现在可以在adder中使用add-one这个库crate提供的函数了，如下，编译可以通过：
+
+![image-20220306150124824](https://abc.p0lar1s.com/202203061501886.png)
+
+怎么运行adder这个二进制crate呢？
+
+```
+cargo run -p adder
+```
+
+通过p来指定crate的名称
+
+在创建一个新的库crate：add-two
+
+![image-20220306150659038](https://abc.p0lar1s.com/202203061506101.png)
+
+剩余步骤类似，可在add-two中添加函数
+
+在add-one中添加测试：
+
+![image-20220306150933858](https://abc.p0lar1s.com/202203061509941.png)
+
+在add这个工作空间中执行测试（文件夹下）
+
+```
+cargo test
+```
+
+会一次性执行所有crate的测试，也可以通过-p指定对某个crate进行单独的测试
+
