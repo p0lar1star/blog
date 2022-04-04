@@ -44,11 +44,11 @@ Basic knowledge of IoT Security.
 
 ARM处理器中有37个寄存器，有31个通用寄存器（包括程序计数器PC等，都是32位的寄存器）和6个状态寄存器(都是 32 位的寄存器)。尽管处理器内部有37个寄存器，但是同一时刻只能用16个。
 
-![image-20211225164833134](https://abc.p0lar1s.com/202112251648356.png)
+![image-20211225164833134](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041753728.png)
 
 ARM 处理器共有 7 种不同的处理器模式：用户模式（User），快速中断模式（FIQ），普通中断模式（IRQ），管理模式（Svc），数据访问中止模式（Abort），未定义指令中止模式（Und），系统模式（Sys），在每一种处理器模式中有一组相应的寄存器。在任意一种处理器模式下，可见的寄存器包括 15 个通用寄存器（R0~R14）、一个或者二个状态寄存器以及程序计数器（PC）。在所有的寄存器中，有些是各模式共用同一个物理寄存器，有些寄存器是各个模式自己拥有独立的物理寄存器。其中R0到R12用于数据处理 （**r0~r3 一般用于子程序间传递参数， r4~r11 一般用于保存局部变量**，但在 Thumb 工作状态下，通常只能使用 r4~r7 来保存局部变量)， **r13 通常用做栈指针，即 sp； r14 寄存器又被称为连接寄存器（lr），用于保存子程序以及中断的返回地址； r15 用作程序计数器（pc）**，由于 ARM 采用了流水线机制，当正确读取了 PC 的值后，该值为当前指令地址加 8 个字节，即 **PC 指向当前指令的下两条指令地址**。CPSR和SPSR都是程序状态寄存器，其中SPSR是用来保存中断前的CPSR中的值，以便在中断返回之后恢复处理器程序状态。
 
-![image-20211225164905343](https://abc.p0lar1s.com/202112251649331.png)
+![image-20211225164905343](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041753055.png)
 
   如上图，系统模式和用户模式共享相同的寄存器。用户、系统模式没有“程序状态保存寄存器（SPSR）”，而其他5种模式分别有一个对应的“程序状态保存寄存器（SPSR）”，即共**五个SPSR**，七个模式共用一个“**程序状态寄存器**（CPSR，current program status register）”，即共**六个状态寄存器**，还有**31个通用寄存器**。
 
@@ -260,7 +260,7 @@ TEQ R1，R2  ；将寄存器R1的值与寄存器R2的值按位异或，并根据
 
 #### 6.乘法指令
 
-![img](https://i.loli.net/2021/09/08/9vNgWBYPp7ZxlIn.jpg)
+![img](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041754442.jpeg)
 
 ### 二、汇编转移指令
 
@@ -807,4 +807,4 @@ qemu-arm ./Hello-static
 qemu-arm -L /usr/arm-linux-gnueabi ./Hello
 ```
 
-![image-20210909132031832](https://i.loli.net/2021/09/09/MRoPU2vZa8NjIfe.png)
+![image-20210909132031832](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041754289.png)

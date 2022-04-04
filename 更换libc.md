@@ -21,4 +21,4 @@ free-libc是一款用于在单一虚拟机下做不同环境下pwn题的项目�
 
 ## 方法三：利用pwntools，然后gdb附加调试
 
-![更换libc](https://abc.p0lar1s.com/202110282300356.jpg)
+![更换libc](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041803508.png)

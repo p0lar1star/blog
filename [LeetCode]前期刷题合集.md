@@ -555,7 +555,7 @@ class Solution {
 
 大佬解法：
 
-![image.png](https://i.loli.net/2021/10/26/tepyW5A6RrFHPvw.png)
+![image.png](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041753315.png)
 
 经过旋转的数组，显然前半段满足 >= nums[0]，而后半段不满足 >= nums[0]。我们可以以此作为依据，通过「二分」找到旋转点。然后通过旋转点找到全局最小值即可。
 

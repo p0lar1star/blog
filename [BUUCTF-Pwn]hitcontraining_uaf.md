@@ -43,67 +43,67 @@ int main()
 
 运行结果
 
-![image-20210405011515386](https://i.loli.net/2021/04/05/FhCULk1ojsqrElM.png)
+![image-20210405011515386](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041735910.png)
 
 ## 0x01.检查保护
 
-![image-20210405004832680](https://i.loli.net/2021/04/05/nLGDV2BWOkbp4MA.png)
+![image-20210405004832680](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041735801.png)
 
 ## 0x02.静态分析
 
-![image-20210405004924203](https://i.loli.net/2021/04/05/tIx98Z4EoaumMlj.png)
+![image-20210405004924203](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041735026.png)
 
 经典菜单题，进入add_note函数查看，一次只能add一个结点，最多add5个
 
 容易观察到notelist其实是一个结构体数组，大小为8个字节，其第一个成员为函数指针（4字节），指向print_note_content函数，其第二个成员也为一个指针（4字节），指向后续malloc指定大小的空间，因此在ida中的Structures窗口添加如下结构体定义
 
-![image-20210405005450799](https://i.loli.net/2021/04/05/aRofvOPjrcDsbLV.png)
+![image-20210405005450799](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041735339.png)
 
 将notelist的类型声明改为如下所示
 
-![image-20210405005618871](https://i.loli.net/2021/04/05/N6uSbaK3t1OUhZT.png)
+![image-20210405005618871](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041735398.png)
 
 优化效果：
 
-![image-20210405005649970](https://i.loli.net/2021/04/05/VK6Y3fsrWIuivPa.png)
+![image-20210405005649970](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041735634.png)
 
 再看del_note函数，作用是删除指定下标的结点
 
-![image-20210405011620907](https://i.loli.net/2021/04/05/KpBDCIAOJvgjQy1.png)
+![image-20210405011620907](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041735957.png)
 
 未将指针置空，存在uaf漏洞
 
 print_note函数，打印指定下标的结构体中buf的内容
 
-![image-20210405011959024](https://i.loli.net/2021/04/05/FK7T2ON9kVtIzcM.png)
+![image-20210405011959024](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041735867.png)
 
 在这个函数中会执行notelist结构体中第一个指针指向的函数，我们如果能把指针改为指向system("/bin/sh")函数，就能获得权限
 
 后门：
 
-![image-20210405175442208](https://i.loli.net/2021/04/05/JSjwTvHbFuzdWLZ.png)
+![image-20210405175442208](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041735511.png)
 
 ## 0x03.动态调试
 
 我们申请了两个结构体
 
-![image-20210405172903922](https://i.loli.net/2021/04/05/ipykSwE2vOCW9mN.png)
+![image-20210405172903922](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041735242.png)
 
 堆中情况如下：
 
-![image-20210405172800928](https://i.loli.net/2021/04/05/QXLfoibEMDW23zh.png)
+![image-20210405172800928](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041736961.png)
 
 释放：
 
-![image-20210405173025365](https://i.loli.net/2021/04/05/s3GQluib1JMf9LD.png)
+![image-20210405173025365](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041736351.png)
 
 堆中：
 
-![image-20210405173052094](https://i.loli.net/2021/04/05/5sXEqM9jKZkVa2O.png)
+![image-20210405173052094](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041736763.png)
 
 bins:
 
-![image-20210405173116497](https://i.loli.net/2021/04/05/2oJmPrzjXgHqIlE.png)
+![image-20210405173116497](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041736312.png)
 
 ## 0x04.思路
 

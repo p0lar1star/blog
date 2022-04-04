@@ -18,11 +18,11 @@
 
 64位，保护全开
 
-![image-20211101234430091](https://abc.p0lar1s.com/202111012344191.png)
+![image-20211101234430091](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041750201.png)
 
 背景：
 
-![image-20211101234604920](https://abc.p0lar1s.com/202111012346956.png)
+![image-20211101234604920](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041750964.png)
 
 漏洞函数：
 
@@ -143,15 +143,15 @@ LABEL_17:
 
 此处申请一块0x10大小的空间用于存放召唤出来的东西，记为1号堆空间
 
-![image-20211101234738426](https://abc.p0lar1s.com/202111012347457.png)
+![image-20211101234738426](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041750544.png)
 
 前述空间中的前八个字节用于存放召唤物名字的地址：
 
-![image-20211101235044731](https://abc.p0lar1s.com/202111012350759.png)
+![image-20211101235044731](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041750311.png)
 
 后八个字节存放召唤物的等级：
 
-![image-20211101235132801](https://abc.p0lar1s.com/202111012359217.png)
+![image-20211101235132801](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041750177.png)
 
 strdup会隐式调用malloc：
 
@@ -174,27 +174,27 @@ strdup调用malloc申请的大小取决于要复制的字符串的长度，**它
 
 可是，释放召唤出来的东西时，本应该释放1号，但**没有free掉堆空间1，而是free掉了strdup使用malloc申请的2号堆空间**：
 
-![image-20211101235715509](https://abc.p0lar1s.com/202111012357536.png)
+![image-20211101235715509](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041750810.png)
 
 要打败evil summoner，需要等级为5，但是我们最多只能level-up到4，怎么办呢？
 
 我们先summon一个，会先后得到16字节的1号堆空间和16字节的保存名字的2号堆空间
 
-![image-20211102014029647](https://abc.p0lar1s.com/202111020140738.png)
+![image-20211102014029647](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041750309.png)
 
 于是输入名字时用八个字节填充前八个字节，再填入5，这样后八个字节就是5
 
-![image-20211102014841266](https://abc.p0lar1s.com/202111020148302.png)
+![image-20211102014841266](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041750647.png)
 
 再release，这样2号堆空间就变成了fastbin chunk
 
-![image-20211102015101692](https://abc.p0lar1s.com/202111020151728.png)
+![image-20211102015101692](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041750900.png)
 
-![image-20211102015147426](https://abc.p0lar1s.com/202111020151458.png)
+![image-20211102015147426](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041750107.png)
 
 再召唤一个，即重新得到这个chunk，0x55ae381da030成为当前的一号堆空间，0x55ae381da050成为当前的二号堆空间，一号堆空间的最后八字节为5，表示我们召唤的东西等级已经达到5
 
-![image-20211102015511764](https://abc.p0lar1s.com/202111020155806.png)
+![image-20211102015511764](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041750451.png)
 
 再strike即可
 
@@ -220,39 +220,39 @@ p.interactive()
 
 checksec:
 
-![image-20211107172052779](https://abc.p0lar1s.com/202111071720812.png)
+![image-20211107172052779](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041750351.png)
 
 add():
 
-![在这里插入图片描述](https://abc.p0lar1s.com/202111071720705.png)
+![在这里插入图片描述](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041750943.png)
 
 sub_804862B：打印出实参地址+4处的地址指向的内容
 
-![在这里插入图片描述](https://abc.p0lar1s.com/202111071721682.png)
+![在这里插入图片描述](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041750712.png)
 
-![img](https://abc.p0lar1s.com/202111071721146.png)
+![img](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041751919.png)
 
 gdb看一下堆块的布局更方便理解
 
-![在这里插入图片描述](https://abc.p0lar1s.com/202111071722046.png)
+![在这里插入图片描述](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041751055.png)
 
 delete()
 
-![在这里插入图片描述](https://abc.p0lar1s.com/202111071722179.png)
+![在这里插入图片描述](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041751345.png)
 
 printnote():打印时，参数为note块地址
 
-![在这里插入图片描述](https://abc.p0lar1s.com/202111071723030.png)
+![在这里插入图片描述](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041751092.png)
 
 思路：使用UAF泄露libc，计算system的地址，执行system(‘/bin/sh’)或获取shell
 
 具体怎么泄露？先add chunk0，add chunk1，然后delete chunk0，chunk1，此时再申请add chunk2，大小为8. 那么chunk2的note块就是chunk1的note块，chunk2的content块就是chunk0的note块（fastbin的原则是LIFO）。此时向content2中写入0x804862B函数地址（保持不变，还是原来的）和puts@got地址
 
-![image-20211107171138928](https://abc.p0lar1s.com/202111071719174.png)
+![image-20211107171138928](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041751177.png)
 
 如上图，system的参数是note块地址，即存放system函数地址的地址，这样肯定不行。但是使用连续执行多条命令的’ ; ‘，第一条执行错误会被忽略，然后执行下一条，因此可以成功将content位置覆盖成 ‘;sh\x00’或‘||sh’，同样的然后printnote(0)就能执行system(system_addr+‘;sh\x00’)得到shell了
 
-```
+```python
 from pwn import  *
 from LibcSearcher import LibcSearcher
 from sys import argv
@@ -335,7 +335,7 @@ itr()
 
 可参考fastbin_dup.c：
 
-```
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -383,7 +383,7 @@ int main()
 
 menu：
 
-```
+```c
 unsigned __int64 sub_A50()
 {
   unsigned __int64 v1; // [rsp+8h] [rbp-8h]
@@ -402,7 +402,7 @@ unsigned __int64 sub_A50()
 
 主函数：
 
-```
+```c
 void __fastcall __noreturn main(int a1, char **a2, char **a3)
 {
   int v3; // ebx
@@ -479,7 +479,7 @@ LABEL_13:
 
 exp:
 
-```
+```python
 from pwn import  *
 from LibcSearcher import LibcSearcher
 from sys import argv
@@ -571,7 +571,7 @@ itr()
 
 menu：
 
-```
+```c
 unsigned __int64 menu()
 {
   unsigned __int64 v1; // [rsp+8h] [rbp-8h]
@@ -609,7 +609,7 @@ struct list p[]
 
 add():
 
-```
+```c
 unsigned __int64 add()
 {
   int i; // [rsp+8h] [rbp-28h]
@@ -653,7 +653,7 @@ unsigned __int64 add()
 
 delete():
 
-```
+```c
 unsigned __int64 delete()
 {
   int v1; // [rsp+Ch] [rbp-24h]
@@ -687,7 +687,7 @@ unsigned __int64 delete()
 
 edit():
 
-```
+```c
 unsigned __int64 edit()
 {
   int v1; // [rsp+Ch] [rbp-24h]
@@ -720,7 +720,7 @@ unsigned __int64 edit()
 
 display():
 
-```
+```c
 unsigned __int64 display()
 {
   int v1; // [rsp+Ch] [rbp-24h]
@@ -748,7 +748,7 @@ unsigned __int64 display()
 
 经典菜单主函数：
 
-```
+```c
 void __fastcall __noreturn main(__int64 a1, char **a2, char **a3)
 {
   int v3; // eax
@@ -791,13 +791,7 @@ LABEL_13:
 }
 ```
 
-exp:
-
-```
-
-```
-
-
+exp:略
 
 # 3.unlink
 
@@ -864,23 +858,14 @@ define unlink(P, BK, FD) {                                            \
 
 ## Exercise
 
-
-
 # 4.off by one
 
 ## Introduction
 
-
-
 ## Exercise
-
-
 
 # 5.fastbin
 
 ## Introduction
 
-
-
 ## Exercise
-

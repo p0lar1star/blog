@@ -187,7 +187,7 @@
 
 ## 64位 syscall
 
-```
+```c
 #ifndef _ASM_X86_UNISTD_64_H
 #define _ASM_X86_UNISTD_64_H 1
  

@@ -79,7 +79,7 @@ free(buffer);
 - ASLR 关闭时，两者指向 data/bss 段的末尾，也就是`end_data`
 - ASLR 开启时，两者指向 data/bss 段的末尾加上一段随机 brk 偏移
 
-![Process Virtual Memory Layout](https://abc.p0lar1s.com/202110312112336.png)
+![Process Virtual Memory Layout](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041754195.png)
 
 > 注：注意与`sbrk()`的区别，后者是 C 语言库函数，`malloc`源码中的`MORECORE`就是调用的`sbrk()`。
 
@@ -197,10 +197,10 @@ struct malloc_state
 在后面介绍 chunk 和 bin 的时候，我们会发现其中几个字段的作用，`malloc_chunk`我们也会在后面看到。
 
 对于`arena`中只有单个堆的情况：
-![Single Heap](https://abc.p0lar1s.com/202110312113605.png)
+![Single Heap](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041754903.png)
 
 对于`non_main_arena`中有多个堆的情况：
-![Multiple Heap](https://abc.p0lar1s.com/202110312113713.png)
+![Multiple Heap](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041754013.png)
 
 注意到有多个堆的情况下，旧的堆的 Top chunk 会被认为是普通的空闲块。
 
@@ -234,7 +234,7 @@ typedef struct malloc_chunk* mchunkptr;
 
 ### Allocated chunk
 
-![Allocated chunk](https://abc.p0lar1s.com/202110312113433.png)
+![Allocated chunk](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041754807.png)
 
 第一个部分（32 位上 4B，64 位上 8B）叫做`prev_size`，只有在前一个 chunk 空闲时才表示前一个块的大小，否则这里就是无效的，可以被前一个块征用（存储用户数据）。
 
@@ -355,7 +355,7 @@ musable (void *mem)
 
 ### Free chunk
 
-![Free chunk](https://abc.p0lar1s.com/202110312113233.png)
+![Free chunk](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041754494.png)
 
 首先，`prev_size`必定存储上一个块的用户数据，因为 Free chunk 的上一个块必定是 Allocated chunk，否则会发生合并。
 
@@ -405,7 +405,7 @@ bin 是实现了空闲链表的数据结构，用来存储空闲 chunk，可分�
 
 **chunk大小（含chunk头部）：32位下0x10-0x40B，64位下0x20-0x80B**，相邻bin存放的大小相差0x8（0x10）B。
 
-![fast bins](https://abc.p0lar1s.com/202110312113816.png)
+![fast bins](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041754774.png)
 
 > 注：加入 fastbins 的 chunk，它的`IN_USE`位（准确地说，是下一个 chunk 的`PREV_INUSE`位）依然是 1。这就是为什么相邻的“空闲”chunk 不会被合并，因为它们根本不会被认为是空闲的。
 
@@ -424,7 +424,7 @@ bin 是实现了空闲链表的数据结构，用来存储空闲 chunk，可分�
 非常像缓冲区 buffer，**大小超过 fast bins 阈值的 chunk 被释放时**会加入到这里，这使得 ptmalloc2 可以**复用**最近释放的 chunk，从而提升效率。
 
 unsorted bin 是一个双向循环链表，chunk 大小：大于`global_max_fast`，没有限制上限。
-![unsorted bin](https://abc.p0lar1s.com/202110312113827.png)
+![unsorted bin](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041755420.png)
 
 当程序申请大于`global_max_fast`内存时，分配器遍历unsorted bin，每次取最后的一个unsorted chunk。
 
@@ -495,7 +495,7 @@ large bins 是 63 个双向循环链表，插入和删除可以发生在任意�
 
 我觉得这类复杂的流程比较需要靠流程图来理解，因此我画了一下：
 
-![Qdiypn.png](https://abc.p0lar1s.com/202110312113856.png)
+![Qdiypn.png](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041755539.png)
 
 相关宏：
 
@@ -520,7 +520,7 @@ large bins 是 63 个双向循环链表，插入和删除可以发生在任意�
 
 ## 内存释放流程
 
-![3C7AKI.png](https://abc.p0lar1s.com/202110312113186.png)
+![3C7AKI.png](https://cdn.jsdelivr.net/gh/p0lar1star/blog-img/202204041755024.png)
 
 ## 参考资料
 
