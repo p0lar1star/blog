@@ -1117,3 +1117,29 @@ cargo test
 
 会一次性执行所有crate的测试，也可以通过-p指定对某个crate进行单独的测试
 
+# 12.碰到的一些问题
+
+这里简单记录一下碰到过的问题
+
+```rust
+fn func(index: u32, love: &mut [u32]) {
+    println!("{}", index);
+    println!("{:?}", love);
+    love[index] = 1;
+}
+```
+
+报错，原因是下标index必须是usize类型，而不能是u32/i32等类型，**Rust中数组/切片的下标（索引）都是usize类型**
+
+这有诸多考虑，例如下标不能是负数，以及如果以较小的类型以进行索引，将不能向后兼容（未来可能需要存储更多数据，改了数组容量后有可能忘记改索引大小）……总之就是如果下标是任何其他类型都将无法访问数组/切片的完整潜在范围，或者将允许不可能存在的索引。
+
+于是改为：
+
+```rust
+fn func(index: usize, love: &mut [i32]) {
+    println!("{}", index);
+    println!("{:?}", love);
+    love[index] = 1;
+}
+```
+

